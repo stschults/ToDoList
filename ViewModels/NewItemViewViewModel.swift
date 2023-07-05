@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import FirebaseAuth
+import FirebaseFirestore
 
 class NewItemViewViewModel: ObservableObject {
     @Published var title = ""
@@ -13,10 +15,6 @@ class NewItemViewViewModel: ObservableObject {
     @Published var showAlert = false 
     
     init() {}
-    
-    func save() {
-        
-    }
     
     var canSave: Bool {
         guard !title.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -28,4 +26,31 @@ class NewItemViewViewModel: ObservableObject {
         
         return true
     }
+    
+    func save() {
+        guard canSave else {
+            return
+        }
+        // Get current user id
+        guard let uID = Auth.auth().currentUser?.uid else {
+            return
+        }
+        // Create model
+        let newID = UUID().uuidString
+        let newItem = ToDoListItem(id: newID,
+                                   title: title ,
+                                   dueDate: dueDate.timeIntervalSince1970,
+                                   createDate: Date().timeIntervalSince1970,
+                                    isDone: false)
+        
+        // Save model
+        let db = Firestore.firestore()
+        db.collection("users")
+            .document()
+            .collection("todos")
+            .document(newID)
+            .setData(newItem.asDictionary())
+    }
+    
+    
 }
